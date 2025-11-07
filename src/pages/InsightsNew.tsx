@@ -25,9 +25,9 @@ const sentimentData = [
 
 export default function InsightsNew() {
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-6 max-w-[1400px] mx-auto animate-fade-in">
       {/* AI Summary Banner */}
-      <Card className="shadow-card bg-card border-l-4 border-l-success">
+      <Card className="shadow-card bg-card border-l-4 border-l-success transition-all duration-200 hover:-translate-y-1">
         <CardContent className="pt-6">
           <div className="flex gap-4">
             <div className="h-12 w-12 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
@@ -51,7 +51,7 @@ export default function InsightsNew() {
 
       {/* Metrics Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-card bg-card">
+        <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-lg bg-success/20 flex items-center justify-center">
@@ -74,7 +74,7 @@ export default function InsightsNew() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card bg-card">
+        <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-lg bg-warning/20 flex items-center justify-center">
@@ -97,7 +97,7 @@ export default function InsightsNew() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card bg-card">
+        <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -120,7 +120,7 @@ export default function InsightsNew() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-card bg-card">
+        <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
           <CardContent className="pt-6">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-lg bg-chart-4/20 flex items-center justify-center">
@@ -145,7 +145,7 @@ export default function InsightsNew() {
       </div>
 
       {/* Predictive Analysis */}
-      <Card className="shadow-card bg-card">
+      <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
         <CardContent className="pt-6">
           <h3 className="font-semibold text-lg mb-4">Predictive Performance Analysis</h3>
           <p className="text-sm text-muted-foreground mb-6">Based on historical data patterns and current velocity</p>
@@ -171,7 +171,7 @@ export default function InsightsNew() {
       </Card>
 
       {/* Team Benchmarking */}
-      <Card className="shadow-card bg-card">
+      <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
         <CardContent className="pt-6">
           <div className="flex items-start gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-success/20 flex items-center justify-center">
@@ -279,7 +279,7 @@ export default function InsightsNew() {
       </Card>
 
       {/* Team Communication Sentiment */}
-      <Card className="shadow-card bg-card">
+      <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
         <CardContent className="pt-6">
           <h3 className="font-semibold text-lg mb-2">Team Communication Sentiment</h3>
           <p className="text-sm text-muted-foreground mb-6">Analyzed from commit messages and task comments</p>

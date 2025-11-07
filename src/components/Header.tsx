@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Menu, Bell } from "lucide-react";
-import { useState } from "react";
+import { Bell, Cloud } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, CheckSquare, Sparkles, MessageSquare, Settings } from "lucide-react";
@@ -14,52 +13,66 @@ const navigation = [
 ];
 
 export function Header() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 lg:ml-64">
-      <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold lg:hidden ml-2 bg-gradient-primary bg-clip-text text-transparent">
+    <header className="sticky top-0 z-40 border-b border-border bg-[#0f1419]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0f1419]/80">
+      <div className="flex h-16 items-center justify-between px-6">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+            <Cloud className="h-5 w-5 text-white" />
+          </div>
+          <h1 className="text-lg font-bold text-white">
             PULSEVO
           </h1>
         </div>
+
+        {/* Center: Navigation Tabs */}
+        <nav className="hidden md:flex items-center gap-2">
+          {navigation.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.href}
+              className={cn(
+                "px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+                "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              )}
+              activeClassName="bg-primary text-white hover:bg-primary hover:text-white"
+            >
+              {item.name}
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          <select className="px-3 py-1.5 text-sm bg-secondary/50 border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary">
+            <option>Today</option>
+            <option>This Week</option>
+            <option>This Month</option>
+          </select>
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive"></span>
+            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary"></span>
           </Button>
         </div>
       </div>
       
       {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <nav className="lg:hidden border-t border-border px-3 py-4 space-y-1">
-          {navigation.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={cn(
-                "group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors",
-                "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              )}
-              activeClassName="bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-            >
-              <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-              {item.name}
-            </NavLink>
-          ))}
-        </nav>
-      )}
+      <nav className="md:hidden border-t border-border px-3 py-2 flex overflow-x-auto gap-2 bg-[#0f1419]/95">
+        {navigation.map((item) => (
+          <NavLink
+            key={item.name}
+            to={item.href}
+            className={cn(
+              "px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 whitespace-nowrap",
+              "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            )}
+            activeClassName="bg-primary text-white hover:bg-primary hover:text-white"
+          >
+            {item.name}
+          </NavLink>
+        ))}
+      </nav>
     </header>
   );
 }

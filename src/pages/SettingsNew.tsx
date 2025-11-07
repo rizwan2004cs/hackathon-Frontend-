@@ -20,14 +20,14 @@ export default function SettingsNew() {
   };
 
   return (
-    <div className="max-w-[1000px] mx-auto space-y-6">
+    <div className="max-w-[1000px] mx-auto space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold mb-2">Settings</h1>
         <p className="text-sm text-muted-foreground">Configure API connections and preferences</p>
       </div>
 
       {/* API Configuration */}
-      <Card className="shadow-card bg-card">
+      <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -91,7 +91,7 @@ export default function SettingsNew() {
       </Card>
 
       {/* Notifications */}
-      <Card className="shadow-card bg-card">
+      <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1">
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-chart-4/20 flex items-center justify-center">
