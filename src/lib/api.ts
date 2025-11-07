@@ -45,6 +45,15 @@ export interface QueryResponse {
   // Add other fields based on actual API response
 }
 
+export interface ForecastDay {
+  ds: string;  // date
+  yhat: number;  // predicted value
+}
+
+export interface ForecastResponse {
+  forecast: ForecastDay[];
+}
+
 export interface DashboardAnalytics {
   kpis: KPIs;
   task_distribution: TaskDistribution[];
@@ -134,6 +143,44 @@ export async function sendQuery(question: string): Promise<QueryResponse> {
     // Return mock response as fallback
     return {
       answer: "I apologize, but I'm currently unable to connect to the analytics service. Please try again later or contact support if the issue persists."
+    };
+  }
+}
+
+export async function fetchWeekForecast(): Promise<ForecastResponse> {
+  try {
+    console.log('Fetching week forecast from AI ML API');
+    
+    const response = await fetch('https://ai-tribe-ml.onrender.com/forecast/next_week', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    console.log('Forecast response status:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Forecast data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error fetching forecast:', error);
+    
+    // Return mock forecast as fallback
+    return {
+      forecast: [
+        { ds: "2025-01-13", yhat: -2.00000077833034 },
+        { ds: "2025-01-14", yhat: -120.48153719004965 },
+        { ds: "2025-01-15", yhat: -0.4208843322076934 },
+        { ds: "2025-01-16", yhat: 49.894401094182946 },
+        { ds: "2025-01-17", yhat: 25.50376556601788 },
+        { ds: "2025-01-18", yhat: 15.098877431522286 },
+        { ds: "2025-01-19", yhat: -4.0000006316169365 }
+      ]
     };
   }
 }
