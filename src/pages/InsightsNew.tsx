@@ -1,7 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, AlertTriangle, Clock, Users } from "lucide-react";
+import { TrendingUp, AlertTriangle, Clock, Users, Activity } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from "recharts";
+import { useState, useEffect } from "react";
+import { fetchWeekForecast, ForecastDay } from "@/lib/api";
 
 const weeklyData = [
   { week: "Week 1", alpha: 38, yourTeam: 36, beta: 35, gamma: 34 },
@@ -24,6 +26,68 @@ const sentimentData = [
 ];
 
 export default function InsightsNew() {
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showFallback, setShowFallback] = useState(false);
+
+  useEffect(() => {
+    const loadForecast = async () => {
+      // reset fallback when starting a fresh load
+      setShowFallback(false);
+      try {
+        const data = await fetchWeekForecast();
+        setForecast(data.forecast);
+      } catch (error) {
+        console.error('Error loading forecast:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // start loading and kick off fetch
+    setLoading(true);
+    loadForecast();
+
+    // if loading takes longer than 2500ms, show the example fallback data
+    const fallbackTimer = setTimeout(() => {
+      if (loading) setShowFallback(true);
+    }, 2500);
+
+    return () => clearTimeout(fallbackTimer);
+  }, []);
+
+  // Sample fallback forecast (example response) — used when API is slow
+  const sampleForecast: ForecastDay[] = [
+    { ds: "2025-01-13", yhat: -2.00000077833034 },
+    { ds: "2025-01-14", yhat: -120.48153719004965 },
+    { ds: "2025-01-15", yhat: -0.4208843322076934 },
+    { ds: "2025-01-16", yhat: 49.894401094182946 },
+    { ds: "2025-01-17", yhat: 25.50376556601788 },
+    { ds: "2025-01-18", yhat: 15.098877431522286 },
+    { ds: "2025-01-19", yhat: -4.0000006316169365 },
+  ];
+
+  // decide which dataset to display: live forecast, or sample fallback when loading is slow
+  const isUsingFallback = loading && showFallback && forecast.length === 0;
+  const effectiveForecast = isUsingFallback ? sampleForecast : forecast;
+
+  // Format forecast data for the chart
+  const forecastChartData = effectiveForecast.map(item => ({
+    date: new Date(item.ds).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    predicted: Math.round(item.yhat * 10) / 10,
+  }));
+
+  // Derived summary numbers (use effectiveForecast so fallback works)
+  const avgPrediction = effectiveForecast.length
+    ? (effectiveForecast.reduce((sum, day) => sum + day.yhat, 0) / effectiveForecast.length)
+    : 0;
+
+  const peakDayObj = effectiveForecast.length
+    ? effectiveForecast.reduce((max, day) => day.yhat > max.yhat ? day : max, effectiveForecast[0])
+    : { ds: '', yhat: 0 };
+
+  const totalForecastSum = effectiveForecast.reduce((sum, day) => sum + day.yhat, 0);
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto animate-fade-in">
       {/* AI Summary Banner */}
@@ -167,6 +231,123 @@ export default function InsightsNew() {
               <p className="text-sm text-muted-foreground">No major bottlenecks</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* AI Forecast - Next Week Prediction */}
+      <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1 border-l-4 border-l-primary">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3 mb-6">
+            <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">AI-Powered Next Week Forecast</h3>
+              <p className="text-sm text-muted-foreground">Machine learning predictions based on historical patterns</p>
+            </div>
+          </div>
+
+          {loading && !isUsingFallback ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="h-8 w-8 mx-auto mb-4 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="text-sm text-muted-foreground">Loading forecast data...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {isUsingFallback && (
+                <div className="mb-4 p-3 rounded-md bg-muted/30 border border-border text-sm">
+                  Displaying a sample forecast while the live forecast is loading. This will be replaced when the API responds.
+                </div>
+              )}
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={forecastChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis 
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    label={{ value: 'Tasks Predicted', angle: -90, position: 'insideLeft', style: { fill: 'hsl(var(--muted-foreground))' } }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--popover))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '0.5rem'
+                    }}
+                    formatter={(value: number) => [value.toFixed(1), 'Predicted Tasks']}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="predicted" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={3}
+                    dot={{ fill: 'hsl(var(--primary))', r: 5 }}
+                    activeDot={{ r: 7 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+
+              {/* Forecast Summary Cards */}
+              <div className="grid gap-4 md:grid-cols-3 mt-6">
+                <Card className="shadow-card bg-muted/30">
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground mb-1">Average Prediction</p>
+                    <p className="text-2xl font-bold">
+                      {avgPrediction.toFixed(1)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">tasks/day</p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="shadow-card bg-muted/30">
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground mb-1">Peak Day</p>
+                    <p className="text-2xl font-bold">
+                      {new Date(peakDayObj.ds).toLocaleDateString('en-US', { weekday: 'short' })}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {peakDayObj.yhat.toFixed(1)} tasks
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card className="shadow-card bg-muted/30">
+                  <CardContent className="pt-4">
+                    <p className="text-xs text-muted-foreground mb-1">Total Forecast</p>
+                    <p className="text-2xl font-bold">
+                      {totalForecastSum.toFixed(0)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">tasks this week</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="shadow-card bg-primary/5 border-primary/20 mt-4">
+                <CardContent className="pt-4">
+                  <div className="flex gap-2">
+                    <Activity className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold mb-1">AI Insights</p>
+                      <p className="text-sm text-muted-foreground">
+                        Based on machine learning analysis, workload is expected to {
+                          forecast.reduce((sum, day) => sum + day.yhat, 0) / forecast.length > 20 
+                            ? 'increase' 
+                            : 'remain stable'
+                        } next week. 
+                        Plan resources accordingly for optimal team performance.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </CardContent>
       </Card>
 
