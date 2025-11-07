@@ -1,9 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { TrendingUp, AlertTriangle, Clock, Users, Activity } from "lucide-react";
+import { TrendingUp, AlertTriangle, Clock, Users, Activity, Zap } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line } from "recharts";
 import { useState, useEffect } from "react";
-import { fetchWeekForecast, ForecastDay } from "@/lib/api";
+import { fetchWeekForecast, ForecastDay, predictCompletionProbability, PredictionRequest, predictClosureTime, ClosureTimeRequest } from "@/lib/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const weeklyData = [
   { week: "Week 1", alpha: 38, yourTeam: 36, beta: 35, gamma: 34 },
@@ -29,6 +32,16 @@ export default function InsightsNew() {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFallback, setShowFallback] = useState(false);
+  
+  // Prediction state
+  const [predictionMode, setPredictionMode] = useState<"probability" | "closure">("probability");
+  const [taskType, setTaskType] = useState<"Bug" | "Feature" | "Defect">("Bug");
+  const [priority, setPriority] = useState<"Low" | "High" | "Severe">("High");
+  const [teamName, setTeamName] = useState<string>("Alpha Squad");
+  const [createdAt, setCreatedAt] = useState<string>(new Date().toISOString());
+  const [completionProb, setCompletionProb] = useState<number | null>(null);
+  const [closureTime, setClosureTime] = useState<number | null>(null);
+  const [predicting, setPredicting] = useState(false);
 
   useEffect(() => {
     const loadForecast = async () => {
@@ -55,6 +68,35 @@ export default function InsightsNew() {
 
     return () => clearTimeout(fallbackTimer);
   }, []);
+
+  // Fetch prediction whenever task type, priority, team name, created time, or mode changes
+  useEffect(() => {
+    const fetchPrediction = async () => {
+      setPredicting(true);
+      try {
+        const request = {
+          task_type: taskType,
+          priority: priority,
+          team_name: teamName,
+          created_at: createdAt
+        };
+        
+        if (predictionMode === "probability") {
+          const result = await predictCompletionProbability(request);
+          setCompletionProb(result.completion_probability);
+        } else {
+          const result = await predictClosureTime(request);
+          setClosureTime(result.predicted_closure_time_hours);
+        }
+      } catch (error) {
+        console.error('Error fetching prediction:', error);
+      } finally {
+        setPredicting(false);
+      }
+    };
+
+    fetchPrediction();
+  }, [taskType, priority, teamName, createdAt, predictionMode]);
 
   // Sample fallback forecast (example response) — used when API is slow
   const sampleForecast: ForecastDay[] = [
@@ -231,6 +273,198 @@ export default function InsightsNew() {
               <p className="text-sm text-muted-foreground">No major bottlenecks</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* AI Task Completion Prediction */}
+      <Card className="shadow-card bg-card transition-all duration-200 hover:-translate-y-1 border-l-4 border-l-chart-2">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3 mb-6">
+            <div className="h-10 w-10 rounded-lg bg-chart-2/20 flex items-center justify-center">
+              <Zap className="h-5 w-5 text-chart-2" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg">AI Task Predictor</h3>
+              <p className="text-sm text-muted-foreground">
+                {predictionMode === "probability" 
+                  ? "Predict the probability a task will be closed within 24 hours"
+                  : "Predict how long it will take to close the task"
+                }
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Buttons */}
+          <div className="flex gap-2 mb-6 p-1 bg-muted rounded-lg">
+            <Button
+              variant={predictionMode === "probability" ? "default" : "ghost"}
+              className="flex-1"
+              onClick={() => setPredictionMode("probability")}
+            >
+              <Zap className="h-4 w-4 mr-2" />
+              Completion Probability
+            </Button>
+            <Button
+              variant={predictionMode === "closure" ? "default" : "ghost"}
+              className="flex-1"
+              onClick={() => setPredictionMode("closure")}
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Closure Time
+            </Button>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 mb-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Task Type</label>
+              <Select value={taskType} onValueChange={(value) => setTaskType(value as "Bug" | "Feature" | "Defect")}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Bug">Bug</SelectItem>
+                  <SelectItem value="Feature">Feature</SelectItem>
+                  <SelectItem value="Defect">Defect</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Priority</label>
+              <Select value={priority} onValueChange={(value) => setPriority(value as "Low" | "High" | "Severe")}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Severe">Severe</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Team Name</label>
+              <Input 
+                type="text" 
+                value={teamName} 
+                onChange={(e) => setTeamName(e.target.value)}
+                placeholder="Enter team name"
+                className="bg-background"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Created At</label>
+              <Input 
+                type="datetime-local" 
+                value={createdAt.slice(0, 16)} 
+                onChange={(e) => setCreatedAt(new Date(e.target.value).toISOString())}
+                className="bg-background"
+              />
+            </div>
+          </div>
+
+          {predicting ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="h-8 w-8 mx-auto mb-4 animate-spin rounded-full border-4 border-chart-2 border-t-transparent" />
+                <p className="text-sm text-muted-foreground">
+                  {predictionMode === "probability" ? "Calculating probability..." : "Calculating closure time..."}
+                </p>
+              </div>
+            </div>
+          ) : predictionMode === "probability" && completionProb !== null ? (
+            <>
+              <Card className="shadow-card bg-gradient-to-br from-chart-2/10 to-chart-2/5 border-chart-2/30">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Completion Probability (24h)</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <p className="text-6xl font-bold text-chart-2">{completionProb}%</p>
+                    </div>
+                    <Progress value={completionProb} className="h-3 mt-4" />
+                    <p className="text-xs text-muted-foreground mt-3">
+                      {completionProb >= 70 ? 'High likelihood of completion' : 
+                       completionProb >= 40 ? 'Moderate likelihood of completion' : 
+                       'Low likelihood of completion'}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-card bg-primary/5 border-primary/20 mt-4">
+                <CardContent className="pt-4">
+                  <div className="flex gap-2">
+                    <Zap className="h-5 w-5 text-chart-2 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold mb-1">AI Recommendation</p>
+                      <p className="text-sm text-muted-foreground">
+                        {completionProb >= 70 
+                          ? `This ${taskType.toLowerCase()} with ${priority.toLowerCase()} priority has a strong chance of completion within 24 hours. Continue with current approach.`
+                          : completionProb >= 40
+                          ? `This ${taskType.toLowerCase()} may require additional attention. Consider allocating more resources or adjusting priority.`
+                          : `This ${taskType.toLowerCase()} is at risk of missing the 24-hour window. Recommend immediate escalation or reassignment.`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : predictionMode === "closure" && closureTime !== null ? (
+            <>
+              <Card className="shadow-card bg-gradient-to-br from-chart-2/10 to-chart-2/5 border-chart-2/30">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Predicted Closure Time</p>
+                    <div className="flex items-center justify-center gap-3">
+                      <Clock className="h-12 w-12 text-chart-2" />
+                      <div>
+                        <p className="text-6xl font-bold text-chart-2">{closureTime}</p>
+                        <p className="text-lg text-muted-foreground">hours</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Days</p>
+                        <p className="font-semibold text-lg">{Math.floor(closureTime / 24)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Hours</p>
+                        <p className="font-semibold text-lg">{closureTime % 24}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Est. Completion</p>
+                        <p className="font-semibold text-lg">
+                          {new Date(new Date().getTime() + closureTime * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-card bg-primary/5 border-primary/20 mt-4">
+                <CardContent className="pt-4">
+                  <div className="flex gap-2">
+                    <Clock className="h-5 w-5 text-chart-2 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold mb-1">AI Recommendation</p>
+                      <p className="text-sm text-muted-foreground">
+                        {closureTime <= 24 
+                          ? `This ${taskType.toLowerCase()} is expected to be completed quickly (within 1 day). Current resource allocation appears optimal.`
+                          : closureTime <= 72
+                          ? `This ${taskType.toLowerCase()} will take approximately ${Math.floor(closureTime / 24)} days. Consider monitoring progress closely.`
+                          : `This ${taskType.toLowerCase()} has an extended timeline (${Math.floor(closureTime / 24)}+ days). Review complexity and consider breaking into smaller tasks.`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : null}
         </CardContent>
       </Card>
 

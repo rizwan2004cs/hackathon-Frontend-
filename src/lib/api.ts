@@ -54,6 +54,28 @@ export interface ForecastResponse {
   forecast: ForecastDay[];
 }
 
+export interface PredictionRequest {
+  task_type: "Bug" | "Feature" | "Defect";
+  priority: "Low" | "High" | "Severe";
+  team_name: string;
+  created_at: string;  // ISO date string
+}
+
+export interface PredictionResponse {
+  completion_probability: number;  // percentage
+}
+
+export interface ClosureTimeRequest {
+  task_type: "Bug" | "Feature" | "Defect";
+  priority: "Low" | "High" | "Severe";
+  team_name: string;
+  created_at: string;  // ISO date string
+}
+
+export interface ClosureTimeResponse {
+  predicted_closure_time_hours: number;  // hours
+}
+
 export interface DashboardAnalytics {
   kpis: KPIs;
   task_distribution: TaskDistribution[];
@@ -181,6 +203,72 @@ export async function fetchWeekForecast(): Promise<ForecastResponse> {
         { ds: "2025-01-18", yhat: 15.098877431522286 },
         { ds: "2025-01-19", yhat: -4.0000006316169365 }
       ]
+    };
+  }
+}
+
+export async function predictCompletionProbability(request: PredictionRequest): Promise<PredictionResponse> {
+  try {
+    console.log('Predicting completion probability:', request);
+    
+    const response = await fetch('https://ai-tribe-ml.onrender.com/predict/completion_prob', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    console.log('Prediction response status:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Prediction data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error predicting completion probability:', error);
+    
+    // Return mock prediction as fallback (random between 45-85%)
+    const mockProbability = Math.floor(Math.random() * 40) + 45;
+    return {
+      completion_probability: mockProbability
+    };
+  }
+}
+
+export async function predictClosureTime(request: ClosureTimeRequest): Promise<ClosureTimeResponse> {
+  try {
+    console.log('Predicting closure time:', request);
+    
+    const response = await fetch('https://ai-tribe-ml.onrender.com/predict/closure_time', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    console.log('Closure time response status:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('Closure time data received:', data);
+    return data;
+  } catch (error) {
+    console.error('Error predicting closure time:', error);
+    
+    // Return mock closure time as fallback (random between 2-48 hours)
+    const mockHours = Math.floor(Math.random() * 46) + 2;
+    return {
+      predicted_closure_time_hours: mockHours
     };
   }
 }
