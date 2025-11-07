@@ -6,7 +6,7 @@ import { mockMetrics, taskDistribution, weeklyTrend, dailyMetrics, teamMembers }
 
 export default function Overview() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1400px] mx-auto">
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <MetricCard
